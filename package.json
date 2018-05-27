@@ -1,0 +1,32 @@
+{
+  "name": "noodle-male-box",
+  "version": "0.0.1",
+  "author": {
+    "name": "Raymond"
+  },
+  "scripts": {
+    "start": "nodemon app.js --exec babel-node"
+  },
+  "dependencies": {
+    "body-parser": "^1.18.3",
+    "cors": "^2.8.4",
+    "express": "^4.16.3",
+    "imap": "^0.8.19",
+    "indexeddb-js": "0.0.14",
+    "mongodb": "^3.1.0-beta4",
+    "smtp-protocol": "^2.4.7",
+    "sqlite3": "^4.0.0"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.11.4",
+    "babel-core": "^6.26.3",
+    "babel-plugin-transform-class-properties": "^6.24.1",
+    "babel-preset-env": "^1.7.0",
+    "babel-preset-es2015": "^6.9.0",
+    "babel-preset-stage-0": "^6.24.1",
+    "babel-preset-stage-2": "^6.24.1",
+    "babel-register": "^6.11.6",
+    "mocha": "^3.0.1",
+    "nodemon": "^1.10.0"
+  }
+}
