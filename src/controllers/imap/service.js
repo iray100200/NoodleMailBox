@@ -16,7 +16,7 @@ export class ImapAccount {
   constructor(user, password, host, port) {
     this.user = user;
     this.password = password;
-    this.host = host || conf.hotmail.host;
+    this.host = conf.hasOwnProperty(host) ? conf[host].host : host;
     this.port = port || conf.hotmail.port;
     this.imap = new Imap({ user: this.user, password: this.password, host: this.host, port: this.port, tls: true });
   }
