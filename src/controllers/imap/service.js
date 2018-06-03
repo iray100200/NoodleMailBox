@@ -1,24 +1,10 @@
-const Imap = require('imap');
-const inspect = require('util').inspect;
+import Imap from 'imap';
 import fs from "fs";
 import conf from '../../conf/imap.conf';
-
-function last30Days() {
-  let dt = new Date();
-  dt.setTime(Date.now() - 30 * 3600 * 1000 * 24);
-  return dt;
-}
-
-function last7Days() {
-  let dt = new Date();
-  dt.setTime(Date.now() - 7 * 3600 * 1000 * 24);
-  return dt;
-}
-
-export class ImapDate {
-  static LAST_30_DAYS = last30Days();
-  static LAST_7_DAYS = last7Days();
-}
+import { inspect } from 'util';
+import { Base64 } from 'js-base64';
+import { Mail } from '../../com/mail';
+import { IMAP_DATE } from '../../com/imap';
 
 export class ImapAccount {
   user;
@@ -32,102 +18,87 @@ export class ImapAccount {
     this.password = password;
     this.host = host || conf.hotmail.host;
     this.port = port || conf.hotmail.port;
-    this.imap = new Imap({user: this.user, password: this.password, host: this.host, port: this.port, tls: true});
+    this.imap = new Imap({ user: this.user, password: this.password, host: this.host, port: this.port, tls: true });
   }
   static create(imapAccount) {
-    return new ImapAccount({user: imapAccount.user, password: imapAccount.password, host: conf.hotmail, port: imapAccount.port, tls: true});
+    return new ImapAccount({ user: imapAccount.user, password: imapAccount.password, host: conf.hotmail, port: imapAccount.port, tls: true });
   }
   openInbox(cb) {
-    this
-      .imap
-      .openBox("INBOX", true, cb);
+    this.imap.openBox("INBOX", true, cb);
   }
-  parseDate(dateStr) {
-    let year = dateStr.substr(6)
-    return dateStr
-      .substr(0, 6)
-      .concat(",")
-      .concat(year)
+  imapOnError() {
+    return this.imap.on('error', (err) => {
+      console.log(err);
+    });
+  }
+  connectImap() {
+    this.imap.connect();
   }
   retrieveUnreadEmails(cb) {
-    let me = this;
-    this
-      .imap
-      .on('error', () => {
-        console.log(0)
-      })
-    this
-      .imap
-      .once('ready', () => {
-        console.log('---------------------')
-        me.openInbox(function (err, box) {
+    let imap = this.imap;
+    let result = [];
+    return new Promise((resolve, reject) => {
+      imap.once('ready', () => {
+        this.openInbox((err, box) => {
           if (err) {
-            return cb(err);
+            return reject(err);
           }
-          me
-            .imap
-            .search([
-              "UNSEEN",
-              ["SINCE", ImapDate.LAST_7_DAYS]
-            ], function (err, results) {
-              if (err) {
-                cb(err);
-              }
-              var f = me
-                .imap
-                .fetch(results, {bodies: ""});
-              var text = "";
-              f.on("message", function (msg, seqno) {
-                var prefix = '(#' + seqno + ') ';
-                msg.on("body", function (stream, info) {
-                  var buffer = '';
-                  stream.on('data', function (chunk) {
-                    buffer += chunk.toString('utf8');
-                    if (info.which == "1") {
-                      text += chunk.toString('utf8');
-                    }
-                  });
-                  stream.once('end', function () {
-                    console.log(prefix + 'Parsed header: %s', inspect(Imap.parseHeader(buffer)));
-                  });
+          imap.search(["UNSEEN", ["SINCE", IMAP_DATE.LAST_7_DAYS]], (err, results) => {
+            if (err) {
+              return reject(err);
+            }
+            let f = imap.fetch(results, { bodies: ['HEADER.FIELDS (FROM TO SUBJECT DATE)', 'TEXT'], struct: true });
+            f.on("message", (msg, seqno) => {
+              let html, text, header = '', attributes;
+              msg.on("body", (stream, info) => {
+                var msgText = '';
+                stream.on('data', (chunk) => {
+                  if (info.which === 'TEXT') {
+                    msgText += chunk.toString('utf8');
+                  } else {
+                    header += chunk.toString('utf8');
+                  }
                 });
-                msg.once("attributes", function (attrs) {
-                  console.log(JSON.stringify(attrs));
-                });
-                msg.once("end", function () {
-                  console.log(prefix + "Finished");
-                  console.log(text);
+                stream.once('end', () => {
+                  if (info.which === 'TEXT') {
+                    let mail = new Mail(msgText);
+                    let f = mail.parse();
+                    text = f[0];
+                    html = f[1];
+                  }
                 });
               });
-              f.once("error", function (err) {
-                cb(err);
-                console.log("Fetch error: " + err);
+              msg.once("attributes", (attrs) => {
+                attributes = attrs
               });
-              f.once("end", function () {
-                console.log("Done fetching all messages!");
-                me
-                  .imap
-                  .end();
+              msg.once("end", () => {
+                result.push({
+                  header, attributes, body: {
+                    text, html
+                  }
+                })
               });
             });
+            f.once("error", (err) => {
+              reject(err);
+            });
+            f.once("end", () => {
+              resolve(result);
+              imap.end();
+            });
+          });
         });
       });
 
-    this
-      .imap
-      .once('error', function (err) {
-        console.log(err);
+      imap.once('error', function (err) {
+        reject(err)
       });
 
-    this
-      .imap
-      .once('end', function (chunk) {
-        console.log('Connection ended');
-        cb(chunk)
+      imap.once('end', function (chunk) {
+        console.log('Imap connection ended!');
       });
 
-    this
-      .imap
-      .connect();
+      imap.connect();
+    });
   }
 }

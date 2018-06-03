@@ -10,6 +10,8 @@
   "dependencies": {
     "body-parser": "^1.18.3",
     "cors": "^2.8.4",
+    "emailjs-mime-parser": "^2.0.5",
+    "emailjs-utf7": "^4.0.1",
     "express": "^4.16.3",
     "imap": "^0.8.19",
     "indexeddb-js": "0.0.14",
@@ -27,6 +29,7 @@
     "babel-preset-stage-2": "^6.24.1",
     "babel-register": "^6.11.6",
     "mocha": "^3.0.1",
-    "nodemon": "^1.10.0"
+    "nodemon": "^1.10.0",
+    "quoted-printable": "^1.0.1"
   }
 }
