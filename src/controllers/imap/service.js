@@ -41,22 +41,23 @@ export class ImapAccount {
   }
   retrieveUnreadEmails(cb) {
     let imap = this.imap;
-    let result = [];
     return new Promise((resolve, reject) => {
       imap.once('ready', () => {
         this.openInbox((err, box) => {
           if (err) {
             return reject(err);
           }
-          imap.search(["UNSEEN", ["SINCE", IMAP_DATE.LAST_7_DAYS]], (err, results) => {
+          imap.search(["ALL", ["SINCE", IMAP_DATE.LAST_7_DAYS]], (err, results) => {
             if (err) {
               return reject(err);
             }
+            let parsed = {};
             let f = imap.fetch(results, { bodies: ['HEADER.FIELDS (FROM TO SUBJECT DATE)', 'TEXT'], struct: true });
             f.on("message", (msg, seqno) => {
               let html, text, header = '', attributes;
+              parsed[seqno] = {};
               msg.on("body", (stream, info) => {
-                var msgText = '';
+                let msgText = '';
                 stream.on('data', (chunk) => {
                   if (info.which === 'TEXT') {
                     msgText += chunk.toString('utf8');
@@ -64,31 +65,32 @@ export class ImapAccount {
                     header += chunk.toString('utf8');
                   }
                 });
-                stream.once('end', () => {
+                let end = stream.once('end', () => {
                   if (info.which === 'TEXT') {
                     let mail = new Mail(msgText);
                     let f = mail.parse();
                     text = f[0];
                     html = f[1];
+                    parsed[seqno].body = {
+                      text, html
+                    }
+                  } else {
+                    parsed[seqno].header = header;
                   }
                 });
               });
               msg.once("attributes", (attrs) => {
-                attributes = attrs
+                parsed[seqno].attributes = attrs
               });
               msg.once("end", () => {
-                result.push({
-                  header, attributes, body: {
-                    text, html
-                  }
-                })
+                console.log(`Mail ${seqno} end.`)
               });
             });
             f.once("error", (err) => {
               reject(err);
             });
             f.once("end", () => {
-              resolve(result);
+              resolve(parsed);
               imap.end();
             });
           });

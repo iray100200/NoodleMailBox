@@ -5,6 +5,7 @@
     "name": "Raymond"
   },
   "scripts": {
+    "preinstall": "npm install -g nodemon",
     "start": "nodemon app.js --exec babel-node"
   },
   "dependencies": {
