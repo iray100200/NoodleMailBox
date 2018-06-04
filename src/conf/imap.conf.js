@@ -1,10 +1,14 @@
 module.exports = {
     hotmail: {
         host: 'imap-mail.outlook.com',
-        port: '993'
+        port: 993
+    },
+    outlook: {
+        host: 'imap-mail.outlook.com',
+        port: 993
     },
     qqmail: {
-        host: 'imap.exmail.qq.com',
+        host: 'imap.qq.com',
         port: 993
     },
     gmail: {
