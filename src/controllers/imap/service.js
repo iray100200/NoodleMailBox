@@ -4,7 +4,7 @@ import conf from '../../config/imap.conf';
 import { inspect } from 'util';
 import { Base64 } from 'js-base64';
 import { Mail } from '../../com/mail';
-import { IMAP_DATE } from '../../com/imap';
+import { IMAP_DATE, IMAP_FLAG } from '../../com/imap';
 
 export class ImapAccount {
   user;
@@ -39,15 +39,16 @@ export class ImapAccount {
   connectImap() {
     this.imap.connect();
   }
-  retrieveUnreadEmails(cb) {
+  retrieveUnreadEmails(params) {
     let imap = this.imap;
     return new Promise((resolve, reject) => {
+      let { since, flag } = params;
       imap.once('ready', () => {
         this.openInbox((err, box) => {
           if (err) {
             return reject(err);
           }
-          imap.search(["ALL", ["SINCE", IMAP_DATE.LAST_7_DAYS]], (err, results) => {
+          imap.search([params.flag, ["SINCE", params.since]], (err, results) => {
             if (err) {
               return reject(err);
             }
@@ -55,10 +56,10 @@ export class ImapAccount {
               let parsed = {};
               let f = imap.fetch(results, { bodies: ['HEADER.FIELDS (FROM TO SUBJECT DATE)', 'TEXT'], struct: true });
               f.on("message", (msg, seqno) => {
-                let html, text, header = '', attributes;
+                let html, text, attributes;
                 parsed[seqno] = {};
                 msg.on("body", (stream, info) => {
-                  let msgText = '';
+                  let msgText = '', header = '';
                   stream.on('data', (chunk) => {
                     if (info.which === 'TEXT') {
                       msgText += chunk.toString('utf8');
@@ -76,7 +77,7 @@ export class ImapAccount {
                         text, html
                       }
                     } else {
-                      parsed[seqno].header = header;
+                      parsed[seqno].header = Imap.parseHeader(header);
                     }
                   });
                 });
@@ -87,16 +88,16 @@ export class ImapAccount {
                   console.log(`Mail ${seqno} end.`)
                 });
               });
+              f.once("error", (err) => {
+                reject(err);
+              });
+              f.once("end", () => {
+                resolve(parsed);
+                imap.end();
+              });
             } else {
               resolve({})
             }
-            f.once("error", (err) => {
-              reject(err);
-            });
-            f.once("end", () => {
-              resolve(parsed);
-              imap.end();
-            });
           });
         });
       });

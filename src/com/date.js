@@ -1,4 +1,4 @@
-module.exports = function () {
+export const since = function () {
     let r = 3600 * 1000 * 24;
     let now = Date.now();
     return function (d) {
