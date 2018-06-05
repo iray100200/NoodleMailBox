@@ -1,12 +1,12 @@
 import { Controller } from '../base';
 import { ImapAccount } from './service';
-import Conf from '../../conf/imap.conf';
+import Conf from '../../config/imap.conf';
 import params from '../../com/params';
 
 export default class ImapController extends Controller {
     register() {
-        this.Router.all('/receive', (req, res) => {
-            this.receive(params(req)).then(f => {
+        this.Router.all('/receive/:flag/:days', (req, res) => {
+            this.receive(Object.assign(req.params, params(req))).then(f => {
                 res.status(200).send({
                     data: f
                 })

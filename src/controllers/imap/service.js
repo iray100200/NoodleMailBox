@@ -1,6 +1,6 @@
 import Imap from 'imap';
 import fs from "fs";
-import conf from '../../conf/imap.conf';
+import conf from '../../config/imap.conf';
 import { inspect } from 'util';
 import { Base64 } from 'js-base64';
 import { Mail } from '../../com/mail';
@@ -51,41 +51,45 @@ export class ImapAccount {
             if (err) {
               return reject(err);
             }
-            let parsed = {};
-            let f = imap.fetch(results, { bodies: ['HEADER.FIELDS (FROM TO SUBJECT DATE)', 'TEXT'], struct: true });
-            f.on("message", (msg, seqno) => {
-              let html, text, header = '', attributes;
-              parsed[seqno] = {};
-              msg.on("body", (stream, info) => {
-                let msgText = '';
-                stream.on('data', (chunk) => {
-                  if (info.which === 'TEXT') {
-                    msgText += chunk.toString('utf8');
-                  } else {
-                    header += chunk.toString('utf8');
-                  }
-                });
-                let end = stream.once('end', () => {
-                  if (info.which === 'TEXT') {
-                    let mail = new Mail(msgText);
-                    let f = mail.parse();
-                    text = f[0];
-                    html = f[1];
-                    parsed[seqno].body = {
-                      text, html
+            if (results.length > 0) {
+              let parsed = {};
+              let f = imap.fetch(results, { bodies: ['HEADER.FIELDS (FROM TO SUBJECT DATE)', 'TEXT'], struct: true });
+              f.on("message", (msg, seqno) => {
+                let html, text, header = '', attributes;
+                parsed[seqno] = {};
+                msg.on("body", (stream, info) => {
+                  let msgText = '';
+                  stream.on('data', (chunk) => {
+                    if (info.which === 'TEXT') {
+                      msgText += chunk.toString('utf8');
+                    } else {
+                      header += chunk.toString('utf8');
                     }
-                  } else {
-                    parsed[seqno].header = header;
-                  }
+                  });
+                  let end = stream.once('end', () => {
+                    if (info.which === 'TEXT') {
+                      let mail = new Mail(msgText);
+                      let f = mail.parse();
+                      text = f[0];
+                      html = f[1];
+                      parsed[seqno].body = {
+                        text, html
+                      }
+                    } else {
+                      parsed[seqno].header = header;
+                    }
+                  });
+                });
+                msg.once("attributes", (attrs) => {
+                  parsed[seqno].attributes = attrs
+                });
+                msg.once("end", () => {
+                  console.log(`Mail ${seqno} end.`)
                 });
               });
-              msg.once("attributes", (attrs) => {
-                parsed[seqno].attributes = attrs
-              });
-              msg.once("end", () => {
-                console.log(`Mail ${seqno} end.`)
-              });
-            });
+            } else {
+              resolve({})
+            }
             f.once("error", (err) => {
               reject(err);
             });
