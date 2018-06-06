@@ -5,6 +5,7 @@ import { inspect } from 'util';
 import { Base64 } from 'js-base64';
 import { Mail } from '../../com/mail';
 import { IMAP_DATE, IMAP_FLAG } from '../../com/imap';
+import base64 from '../../com/base64';
 
 export class ImapAccount {
   user;
@@ -53,11 +54,11 @@ export class ImapAccount {
               return reject(err);
             }
             if (results.length > 0) {
-              let parsed = {};
+              let parsed = {}, raw = {};
               let f = imap.fetch(results, { bodies: ['HEADER.FIELDS (FROM TO SUBJECT DATE)', 'TEXT'], struct: true });
               f.on("message", (msg, seqno) => {
                 let html, text, attributes;
-                parsed[seqno] = {};
+                raw[seqno] = {};
                 msg.on("body", (stream, info) => {
                   let msgText = '', header = '';
                   stream.on('data', (chunk) => {
@@ -69,23 +70,22 @@ export class ImapAccount {
                   });
                   let end = stream.once('end', () => {
                     if (info.which === 'TEXT') {
-                      let mail = new Mail(msgText);
-                      let f = mail.parse();
-                      text = f[0];
-                      html = f[1];
-                      parsed[seqno].body = {
-                        text, html
-                      }
+                      raw[seqno].body = msgText;
                     } else {
-                      parsed[seqno].header = Imap.parseHeader(header);
+                      raw[seqno].header = header; // Imap.parseHeader();
                     }
                   });
                 });
                 msg.once("attributes", (attrs) => {
-                  parsed[seqno].attributes = attrs
+                  raw[seqno].attributes = attrs;
                 });
                 msg.once("end", () => {
-                  console.log(`Mail ${seqno} end.`)
+                  let r = raw[seqno];
+                  let mail = new Mail(r.body, r.attributes.struct);
+                  parsed[seqno] = {
+                    header: Imap.parseHeader(r.header),
+                    attributes: r.attributes
+                  }
                 });
               });
               f.once("error", (err) => {

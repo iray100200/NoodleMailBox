@@ -1,3 +1,5 @@
+import base64 from './base64';
+
 function _Mail(str) {
     let raw = str.replace(/\"([\w\W]*)\"/, '$1');
     return function(cb) {
