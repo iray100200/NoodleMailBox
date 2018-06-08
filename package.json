@@ -29,6 +29,7 @@
     "babel-preset-stage-0": "^6.24.1",
     "babel-preset-stage-2": "^6.24.1",
     "babel-register": "^6.11.6",
+    "iconv-lite": "^0.4.23",
     "mocha": "^3.0.1",
     "nodemon": "^1.10.0",
     "quoted-printable": "^1.0.1"

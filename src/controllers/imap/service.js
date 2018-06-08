@@ -82,9 +82,11 @@ export class ImapAccount {
                 msg.once("end", () => {
                   let r = raw[seqno];
                   let mail = new Mail(r.body, r.attributes.struct);
+                  let t = mail.parse();
                   parsed[seqno] = {
                     header: Imap.parseHeader(r.header),
-                    attributes: r.attributes
+                    attributes: r.attributes,
+                    body: t
                   }
                 });
               });

@@ -1,24 +1,22 @@
-import base64 from './base64';
-
-function _Mail(str) {
-    let raw = str.replace(/\"([\w\W]*)\"/, '$1');
-    return function(cb) {
-        let parsed = cb.apply(this, [raw].concat(Array.from(arguments)));
-        return function(fn) {
-            return fn(parsed);
-        }
-    }
-}
+import iconv from 'iconv-lite';
 
 export class Mail {
-    mail;
-    constructor(str) {
-        this.mail = _Mail(str);
+    raw;
+    structure;
+    constructor(str, _struct) {
+        this.raw = str.replace(/\"([\w\W]*)\"/, '$1');
+        this.structure = _struct;
     }
-    parse(fn) {
-        let f = this.mail(r => {
-            return r.split(/\-\-\S*[\n\r]/).slice(1, 3);
-        });
-        return f(fn || (p => p));
+    parse() {
+        switch (this.structure.length) {
+            case 1:
+                let { encoding, type, subtype } = this.structure[0];
+                const buf = Buffer.from(this.raw, encoding);
+                let text = iconv.decode(buf, 'gbk');
+                return {
+                    type, subtype, text
+                }
+                break;
+        }
     }
 }
