@@ -45,7 +45,6 @@ export class Mail {
           text,
           struct
         }
-        break
       default:
         let _this = this
         let f = traverse(this.structure)
