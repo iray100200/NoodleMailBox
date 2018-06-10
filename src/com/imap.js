@@ -1,6 +1,6 @@
-import { since } from './date';
+import { since } from './date'
 
-const last = since();
+const last = since()
 
 export const IMAP_DATE = {
   LAST_30_DAYS: last(30),
