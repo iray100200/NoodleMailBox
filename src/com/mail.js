@@ -86,7 +86,7 @@ export class Mail {
         })
         imgs.forEach(o => {
           let imgId = o.struct.id
-          q[hmlIdx].text = q[hmlIdx].text.replace(imgId.substring(1, imgId.length - 1), `data:image/${o.struct.subtype};base64,${o.text}`)
+          q[hmlIdx].text = q[hmlIdx].text.replace(`cid:${imgId.substring(1, imgId.length - 1)}`, `data:image/${o.struct.subtype};base64,${o.text}`)
         })
         return q
     }

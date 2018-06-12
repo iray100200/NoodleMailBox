@@ -9,7 +9,7 @@ export const IMAP_DATE = {
   TODAY: last(1)
 }
 
-export const IMAP_FLAG = {
+export const IMAP_SCOPE = {
   ALL: 'ALL',
   ANSWERED: 'ANSWERED',
   DELETED: 'DELETED',

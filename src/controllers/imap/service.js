@@ -14,7 +14,7 @@ export class ImapAccount {
   port
   tls
   imap
-  constructor (user, password, host, port) {
+  constructor(user, password, host, port) {
     this.user = user
     this.password = password
     if (conf.hasOwnProperty(host)) {
@@ -26,36 +26,37 @@ export class ImapAccount {
     }
     this.imap = new Imap({ user: this.user, password: this.password, host: this.host, port: this.port, tls: true })
   }
-  static create (imapAccount) {
+  static create(imapAccount) {
     return new ImapAccount({ user: imapAccount.user, password: imapAccount.password, host: conf.hotmail, port: imapAccount.port, tls: true })
   }
-  openInbox (cb) {
+  openInbox(cb) {
     this.imap.openBox('INBOX', true, cb)
   }
-  imapOnError () {
+  imapOnError() {
     return this.imap.on('error', err => {
       console.log(err)
     })
   }
-  connectImap () {
+  connectImap() {
     this.imap.connect()
   }
-  retrieveUnreadEmails (params) {
+  retrieveUnreadEmails(params) {
     let imap = this.imap
+    let { scope, condition, date, rows } = params
     return new Promise((resolve, reject) => {
-      let { since, flag } = params
       imap.once('ready', () => {
         this.openInbox((err, box) => {
           if (err) {
             return reject(err)
           }
-          imap.search([params.flag, ['SINCE', params.since]], (err, results) => {
+          imap.search([scope || 'ALL', [condition || 'SINCE', date || new Date()]], (err, results) => {
             if (err) {
               return reject(err)
             }
+            results.length > rows ? results.length = rows : null
             if (results.length > 0) {
               let parsed = {}, raw = {}
-              let f = imap.fetch(results, { bodies: ['HEADER.FIELDS (FROM TO SUBJECT DATE)', 'TEXT'], struct: true })
+              let f = imap.fetch(results, { bodies: ['HEADER.FIELDS (FROM TO SUBJECT DATE TEXT)', 'TEXT'], struct: true })
               f.on('message', (msg, seqno) => {
                 let html, text, attributes
                 raw[seqno] = {}
@@ -70,7 +71,7 @@ export class ImapAccount {
                   })
                   let end = stream.once('end', () => {
                     const simpleParser = require('mailparser').simpleParser
-                    simpleParser(msgText, (err, mail) => {})
+                    simpleParser(msgText, (err, mail) => { })
                     if (info.which === 'TEXT') {
                       raw[seqno].body = msgText
                     } else {

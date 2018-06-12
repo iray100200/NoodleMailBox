@@ -1,6 +1,6 @@
 import { Controller } from '../base'
 import { ImapAccount } from './service'
-import { IMAP_DATE, IMAP_FLAG } from '../../com/imap'
+import { IMAP_DATE, IMAP_SCOPE } from '../../com/imap'
 import { since } from '../../com/date'
 import Conf from '../../config/imap.conf'
 import params from '../../com/params'
@@ -8,8 +8,8 @@ import params from '../../com/params'
 const last = since()
 
 export default class ImapController extends Controller {
-  register () {
-    this.Router.all('/receive/:flag/:days', (req, res) => {
+  register() {
+    this.Router.all('/receive/:scope', (req, res) => {
       this.receive(Object.assign(req.params, params(req)))
         .then(f => {
           res.status(200).send({
@@ -21,14 +21,20 @@ export default class ImapController extends Controller {
         })
     })
   }
-  receive (params) {
-    let { flag, days } = params
-    let imapAccount = new ImapAccount(params.username, params.password, params.host)
-    if (!days || !Number(days)) return Promise.reject('Invalid parameters. The days must be a number.')
-    if (!flag || Object.keys(IMAP_FLAG).indexOf((flag = flag.toUpperCase())) < 0) return Promise.reject('Invalid parameters. Flag is incorrect.')
+  receive(params) {
+    let { scope, condition, date, username, password, host, rows } = params
+    if (!username || !password || !host) {
+      return Promise.reject('Username & Password & Host are required.')
+    }
+    let imapAccount = new ImapAccount(username, password, host)
+    if (!condition) return Promise.reject('Invalid parameters. The condition\'s type is invalid.')
+    if (!date) return Promise.reject('Invalid parameters. The date\'s type is invalid.')
+    if (!scope || Object.keys(IMAP_SCOPE).indexOf((scope = scope.toUpperCase())) < 0) return Promise.reject('Invalid parameters. Flag is incorrect.')
     return imapAccount.retrieveUnreadEmails({
-      flag: flag || IMAP_FLAG.ALL,
-      since: last(Number(days)) || IMAP_DATE.LAST_30_DAYS
+      scope: scope || IMAP_SCOPE.ALL,
+      condition,
+      date: Date.parse(date),
+      rows: rows || 30
     })
   }
 }

@@ -5,6 +5,7 @@ import path from 'path'
 import cors from 'cors'
 import bodyParser from 'body-parser'
 import http from 'http'
+import compression from 'compression'
 
 const Router = Express.Router
 const app = Express()
@@ -48,6 +49,7 @@ fs.readdir('./src/controllers', (err, p) => {
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json())
 app.use(cors(corsOptions))
+app.use(compression())
 
 http.createServer(app).listen(3000, () => {
   console.log('Server is listening at port 3000')
