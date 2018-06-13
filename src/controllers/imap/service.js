@@ -53,6 +53,7 @@ export class ImapAccount {
             if (err) {
               return reject(err)
             }
+            results.reverse()
             results.length > rows ? results.length = rows : null
             if (results.length > 0) {
               let parsed = {}, raw = {}
