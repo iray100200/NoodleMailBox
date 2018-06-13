@@ -36,7 +36,15 @@ fs.readdir('./src/controllers', (err, p) => {
             return
           }
           const ctrl = new _ctrl.default(router)
-          ctrl.register()
+          let register = ctrl.register();
+          for (let path in register) {
+            try {
+              let [...r] = path.match(/^@(\w*)\-\>([\w\W]*)/)
+              router[r[1]](r[2], register[r[0]])
+            } catch (e) {
+              console.log(e)
+            }
+          }
           app.use(`/${f}`, router)
         }
       })

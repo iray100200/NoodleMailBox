@@ -7,11 +7,11 @@ let encodings = ['ascii', 'utf8', 'utf16le', 'ucs2', 'base64', 'latin1', 'binary
 export class Mail {
   raw
   structure
-  constructor (str, _struct) {
+  constructor(str, _struct) {
     this.raw = str.replace(/^\"([\w\W]*)\"$/, '$1')
     this.structure = _struct
   }
-  decode (str, _struct) {
+  decode(str, _struct) {
     let { encoding, type, params } = _struct
     let buf
     switch (type) {
@@ -25,18 +25,18 @@ export class Mail {
                 buf = quotedPrintable.decode(str)
                 break
               default:
-                console.log(encoding)
+                return str
             }
           }
         } catch (e) {
           console.log(e)
         }
-        return iconv.decode(buf, params.charset || 'gb2312')
+        if (buf) return iconv.decode(buf, params.charset || 'gb2312')
       default:
         return str
     }
   }
-  parse () {
+  parse() {
     switch (this.structure.length) {
       case 1:
         let struct = this.structure[0]

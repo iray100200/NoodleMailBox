@@ -1,7 +1,7 @@
 export class Controller {
   Router
-  constructor (router) {
+  constructor(router) {
     this.Router = router
   }
-  register () {}
+  register() { }
 }
