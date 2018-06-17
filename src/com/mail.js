@@ -46,7 +46,6 @@ export class Mail {
           struct
         }
       default:
-        let _this = this
         let f = traverse(this.structure)
         let k = f
           .filter(o => {
@@ -56,24 +55,22 @@ export class Mail {
             return o.params.boundary
           })
         let r = []
-        let c = f
-          .filter(o => {
-            return o.size
+        f.filter(o => {
+          return o.size
+        }).forEach(o => {
+          let t = []
+          let pids = o.partID.split('.').map(o => {
+            return Number(o)
           })
-          .forEach(o => {
-            let t = []
-            let pids = o.partID.split('.').map(o => {
-              return Number(o)
-            })
-            pids.forEach((o, i) => {
-              let _t = i < 1 ? this.raw : t[i - 1]
-              t[i] = _t.split(`--${k[i]}\r\n`)[o].replace(new RegExp(`[\-]*${k[i]}[\-]*`), '')
-            })
-            r.push({
-              text: t[pids.length - 1],
-              struct: o
-            })
+          pids.forEach((o, i) => {
+            let _t = i < 1 ? this.raw : t[i - 1]
+            t[i] = _t.split(`--${k[i]}\r\n`)[o].replace(new RegExp(`[\-]*${k[i]}[\-]*`), '')
           })
+          r.push({
+            text: t[pids.length - 1],
+            struct: o
+          })
+        })
         let q = r.map(f => {
           f.text = this.decode(f.text.split(/\r\n\r\n/)[1].trim(), f.struct)
           return f
