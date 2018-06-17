@@ -53,13 +53,13 @@ export class ImapAccount {
             if (err) {
               return reject(err)
             }
+            let [...map] = results;
             results.reverse()
             results.length > rows ? results.length = rows : null
             if (results.length > 0) {
               let parsed = {}, raw = {}
               let f = imap.fetch(results, { bodies: ['HEADER.FIELDS (FROM TO SUBJECT DATE TEXT)', 'TEXT'], struct: true })
               f.on('message', (msg, seqno) => {
-                let html, text, attributes
                 raw[seqno] = {}
                 msg.on('body', (stream, info) => {
                   let msgText = '', header = ''
@@ -70,7 +70,7 @@ export class ImapAccount {
                       header += chunk.toString('utf8')
                     }
                   })
-                  let end = stream.once('end', () => {
+                  stream.once('end', () => {
                     const simpleParser = require('mailparser').simpleParser
                     simpleParser(msgText, (err, mail) => { })
                     if (info.which === 'TEXT') {
@@ -98,7 +98,7 @@ export class ImapAccount {
                 reject(err)
               })
               f.once('end', () => {
-                resolve(parsed)
+                resolve({ parsed, map })
                 imap.end()
               })
             } else {
