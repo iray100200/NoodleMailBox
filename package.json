@@ -13,12 +13,15 @@
     "cors": "^2.8.4",
     "express": "^4.16.3",
     "express-cluster": "0.0.5",
+    "express-session": "^1.15.6",
     "imap": "^0.8.19",
     "indexeddb-js": "0.0.14",
+    "log4js": "^2.9.0",
     "mailparser": "^2.2.0",
     "mongodb": "^3.1.0-beta4",
     "smtp-protocol": "^2.4.7",
-    "sqlite3": "^4.0.0"
+    "sqlite3": "^4.0.0",
+    "uuid": "^3.2.1"
   },
   "devDependencies": {
     "babel-cli": "^6.11.4",
