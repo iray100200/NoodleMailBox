@@ -15,7 +15,7 @@ export default class ImapController extends Controller {
             })
           })
           .catch(e => {
-            res.status(500).send({ error: e.message })
+            res.status(500).send({ error: e || e.message })
           })
       },
       '@all->/receive/details': (req, res) => {
@@ -26,7 +26,7 @@ export default class ImapController extends Controller {
             })
           })
           .catch(e => {
-            res.status(500).send({ error: e.message })
+            res.status(500).send({ error: e || e.message })
           })
       }
     }

@@ -3,6 +3,7 @@ import conf from '../../config/imap.conf'
 import { Mail } from '../../com/mail'
 import logger from '../../com/logger'
 import uuidv1 from 'uuid/v1'
+import uuidv5 from 'uuid/v5'
 
 export class ImapAccount {
   user
@@ -11,7 +12,7 @@ export class ImapAccount {
   port
   tls
   imap
-  uuid
+  _uuid
   static connections = {}
   constructor(user, password, host, port) {
     this.user = user
@@ -24,11 +25,16 @@ export class ImapAccount {
       this.port = port || 993
     }
     this.imap = new Imap({ user: this.user, password: this.password, host: this.host, port: this.port, tls: true })
-    this.uuid = uuidv1()
     ImapAccount.connections[this.uuid] = this.imap
   }
   static create(imapAccount) {
     return new ImapAccount({ user: imapAccount.user, password: imapAccount.password, host: conf.hotmail, port: imapAccount.port, tls: true })
+  }
+  get uuid() {
+    return this._uuid ? this._uuid : (() => {
+      this._uuid = uuidv5(this.user, uuidv1())
+      return this._uuid
+    })()
   }
   openInbox(cb) {
     this.imap.openBox('INBOX', true, cb)
@@ -112,7 +118,7 @@ export class ImapAccount {
         reject(err)
       })
 
-      imap.once('end', function (chunk) {
+      imap.once('end', function () {
         console.log('Imap connection ended!')
       })
 
