@@ -6,6 +6,7 @@ import bodyParser from 'body-parser'
 import http from 'http'
 import compression from 'compression'
 import cluster from 'express-cluster'
+import logger from './src/com/logger'
 
 const numCPUs = require('os').cpus().length
 const corsOptions = {
@@ -62,6 +63,6 @@ cluster(() => {
   app.use(compression())
 
   return http.createServer(app).listen(3000, () => {
-    console.log('Server is listening at port 3000')
+    logger.info('Server is listening at port 3000')
   })
 }, { count: numCPUs })
