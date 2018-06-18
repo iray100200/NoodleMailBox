@@ -17,21 +17,21 @@ const app = Express()
 
 fs.readdir('./src/controllers', (err, p) => {
   if (err) {
-    console.error(err)
+    logger.error(err)
     return
   }
   p.forEach(f => {
     try {
       fs.stat(`./src/controllers/${f}`, (err, stat) => {
         if (err) {
-          console.error(err)
+          logger.error(err)
           return
         }
         if (stat.isDirectory()) {
           const router = Router()
           const _ctrl = require(`./src/controllers/${f}/index`)
           if (!_ctrl.hasOwnProperty('default')) {
-            console.error(`Module should have a default exported class.`)
+            logger.error(`Module should have a default exported class.`)
             return
           }
           const ctrl = new _ctrl.default(router)
@@ -41,14 +41,14 @@ fs.readdir('./src/controllers', (err, p) => {
               let [...r] = path.match(/^@(\w*)\-\>([\w\W]*)/)
               router[r[1]](r[2], register[r[0]])
             } catch (e) {
-              console.log(e)
+              logger.error(e)
             }
           }
           app.use(`/${f}`, router)
         }
       })
     } catch (e) {
-      console.log(e)
+      logger.error(e)
     }
   })
 })
