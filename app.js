@@ -1,4 +1,3 @@
-import './src/com'
 import Express from 'express'
 import fs from 'fs'
 import cors from 'cors'
