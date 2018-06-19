@@ -41,12 +41,18 @@ export class ImapAccount {
   }
   static fetchDetails(params) {
     let { list, uuid } = params
+    let parsed = {}, raw = {}, imap = ImapAccount.connections[uuid]
     if (!(list instanceof Array)) {
       return Promise.reject('Invalid parameter!')
     }
+    if (!list.length) {
+      imap.end()
+      return Promise.resolve({
+        result: []
+      })
+    }
     return new Promise((resolve, reject) => {
       logger.info('...Start fetching details')
-      let parsed = {}, raw = {}, imap = ImapAccount.connections[uuid]
       if (!imap) reject('...Connection does not exist!')
       imap.fetch(list, { bodies: ['HEADER.FIELDS (FROM TO SUBJECT DATE)', 'TEXT'], struct: true })
         .on('message', (msg, seqno) => {
@@ -119,7 +125,7 @@ export class ImapAccount {
       })
 
       imap.once('end', function () {
-        console.log('Imap connection ended!')
+        logger.info('...Imap connection ended!')
       })
 
       imap.connect()
