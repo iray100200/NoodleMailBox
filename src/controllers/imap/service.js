@@ -54,12 +54,12 @@ export class ImapAccount {
     return new Promise((resolve, reject) => {
       logger.info('...Start fetching details')
       if (!imap) reject('...Connection does not exist!')
-      imap.fetch(list, { bodies: ['HEADER.FIELDS (FROM TO SUBJECT DATE)', 'TEXT'], struct: true })
+      imap.fetch(list, { bodies: ['TEXT'], struct: true, envelope: true, size: true })
         .on('message', (msg, seqno) => {
           logger.info('...Start fetching detail on message', seqno)
           raw[seqno] = {}
           msg.on('body', (stream, info) => {
-            let msgText = '', header = ''
+            let msgText = ''
             stream.on('data', chunk => {
               if (info.which === 'TEXT') {
                 msgText += chunk.toString('utf8')
@@ -70,8 +70,6 @@ export class ImapAccount {
             stream.once('end', () => {
               if (info.which === 'TEXT') {
                 raw[seqno].body = msgText
-              } else {
-                raw[seqno].header = header
               }
             })
           })
@@ -83,7 +81,6 @@ export class ImapAccount {
             let mail = new Mail(r.body, r.attributes.struct)
             let t = mail.parse()
             parsed[seqno] = {
-              header: Imap.parseHeader(r.header),
               attributes: r.attributes,
               body: t
             }
