@@ -42,23 +42,31 @@ export class ImapAccount {
     return new Promise((resolve, reject) => {
       logger.info('...Start marking', uuid)
       if (!imap) reject('...Connection does not exist!')
-      imap.connect()
-      imap.once('ready', () => {
-        imap.openBox('INBOX', false, () => {
-          imap.addFlags([uid], [flag], (err) => {
-            imap.end()
-            if (err) {
-              logger.info(err)
-              return reject(err)
-            }
-            resolve({
-              uuid,
-              uid,
-              status: 'success'
+      try {
+        imap.connect()
+        imap.once('ready', (error) => {
+          if (error) {
+            return reject(error)
+          }
+          imap.openBox('INBOX', false, () => {
+            imap.addFlags([uid], [flag], (err) => {
+              imap.end()
+              if (err) {
+                logger.info(err)
+                return reject(err)
+              }
+              resolve({
+                uuid,
+                uid,
+                status: 'success'
+              })
             })
           })
         })
-      })
+      } catch (e) {
+        imap.end()
+        logger.info(e.message)
+      }
     })
   }
   static fetchDetails(params) {
@@ -141,7 +149,12 @@ export class ImapAccount {
       })
 
       imap.once('error', function (err) {
-        reject(err)
+        logger.warn(err)
+        try {
+          reject(err)
+        } catch (e) {
+          logger.warn('...App', e.message)
+        }
       })
 
       imap.once('end', function () {
