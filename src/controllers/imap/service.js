@@ -36,8 +36,30 @@ export class ImapAccount {
       return this._uuid
     })()
   }
-  openInbox(cb) {
-    this.imap.openBox('INBOX', true, cb)
+  static markSeen(params) {
+    let { uuid, uid, flag } = params
+    let imap = ImapAccount.connections[uuid]
+    return new Promise((resolve, reject) => {
+      logger.info('...Start marking', uuid)
+      if (!imap) reject('...Connection does not exist!')
+      imap.connect()
+      imap.once('ready', () => {
+        imap.openBox('INBOX', false, () => {
+          imap.addFlags([uid], [flag], (err) => {
+            imap.end()
+            if (err) {
+              logger.info(err)
+              return reject(err)
+            }
+            resolve({
+              uuid,
+              uid,
+              status: 'success'
+            })
+          })
+        })
+      })
+    })
   }
   static fetchDetails(params) {
     let { list, uuid } = params
@@ -95,13 +117,14 @@ export class ImapAccount {
         })
     })
   }
+
   fetchList(params) {
     let imap = this.imap
     let { scope, condition, date, rows } = params
     return new Promise((resolve, reject) => {
       logger.info('...Start fetching list')
       imap.once('ready', () => {
-        this.openInbox(err => {
+        imap.openBox('INBOX', true, err => {
           if (err) {
             return reject(err)
           }

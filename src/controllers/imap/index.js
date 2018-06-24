@@ -28,6 +28,17 @@ export default class ImapController extends Controller {
           .catch(e => {
             res.status(500).send({ error: e || e.message })
           })
+      },
+      '@all->/mark/flag': (req, res) => {
+        this.markSeen(Object.assign(req.params, params(req)))
+          .then(f => {
+            res.status(200).send({
+              data: f
+            })
+          })
+          .catch(e => {
+            res.status(500).send({ error: e || e.message })
+          })
       }
     }
   }
@@ -62,6 +73,13 @@ export default class ImapController extends Controller {
   async receiveDetails(params) {
     try {
       return ImapAccount.fetchDetails(params)
+    } catch (e) {
+      return Promise.reject(e.message)
+    }
+  }
+  async markSeen(params) {
+    try {
+      return ImapAccount.markSeen(params)
     } catch (e) {
       return Promise.reject(e.message)
     }
