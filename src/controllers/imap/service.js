@@ -13,6 +13,7 @@ export class ImapAccount {
   tls
   imap
   _uuid
+  timer = null
   static connections = {}
   constructor(user, password, host, port) {
     this.user = user
@@ -35,6 +36,26 @@ export class ImapAccount {
       this._uuid = uuidv5(this.user, uuidv1())
       return this._uuid
     })()
+  }
+  login(params) {
+    let { username } = params
+    let imap = this.imap
+    return new Promise((resolve, reject) => {
+      logger.info('...Start login', username)
+      imap.once('ready', () => {
+        resolve({ mailId: params.username, uuid: this.uuid })
+      }).once('error', function (err) {
+        logger.warn(err)
+        try {
+          reject(err)
+        } catch (e) {
+          logger.warn('...App', e.message)
+        }
+      }).once('end', function () {
+        logger.info('...Imap connection ended!')
+      })
+      imap.connect()
+    })
   }
   static markSeen(params) {
     let { uuid, uid, flag } = params
@@ -125,43 +146,25 @@ export class ImapAccount {
         })
     })
   }
-
-  fetchList(params) {
-    let imap = this.imap
-    let { scope, condition, date, rows } = params
+  static fetchList(params) {
+    let { uuid, scope, condition, date, rows } = params
+    let imap = ImapAccount.connections[uuid]
     return new Promise((resolve, reject) => {
       logger.info('...Start fetching list')
-      imap.once('ready', () => {
-        imap.openBox('INBOX', true, err => {
+      imap.openBox('INBOX', true, err => {
+        if (err) {
+          return reject(err)
+        }
+        imap.search([scope || 'ALL', [condition || 'SINCE', date || new Date()]], (err, result) => {
           if (err) {
             return reject(err)
           }
-          imap.search([scope || 'ALL', [condition || 'SINCE', date || new Date()]], (err, result) => {
-            if (err) {
-              return reject(err)
-            }
-            let [...map] = result;
-            result.reverse()
-            result.length > rows ? result.length = rows : null
-            resolve({ result, map, uuid: this.uuid })
-          })
+          let [...map] = result;
+          result.reverse()
+          result.length > rows ? result.length = rows : null
+          resolve({ result, map })
         })
       })
-
-      imap.once('error', function (err) {
-        logger.warn(err)
-        try {
-          reject(err)
-        } catch (e) {
-          logger.warn('...App', e.message)
-        }
-      })
-
-      imap.once('end', function () {
-        logger.info('...Imap connection ended!')
-      })
-
-      imap.connect()
     })
   }
 }
