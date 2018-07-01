@@ -52,7 +52,7 @@ export class Mail {
             return o.params && o.params.boundary
           })
           .map(o => {
-            return o.params.boundary
+            return o.params.boundary.replace('?', '[?]')
           })
         let r = []
         f.filter(o => {
@@ -64,7 +64,8 @@ export class Mail {
           })
           pids.forEach((o, i) => {
             let _t = i < 1 ? this.raw : t[i - 1]
-            t[i] = _t.split(`--${k[i]}\r\n`)[o].replace(new RegExp(`[\-]*${k[i]}[\-]*`), '')
+            let reg = new RegExp(`[\-]*${k[i]}[\-]*`, 'g')
+            t[i] = _t.split(reg)[o].replace(reg, '')
           })
           r.push({
             text: t[pids.length - 1],
@@ -72,7 +73,7 @@ export class Mail {
           })
         })
         let q = r.map(f => {
-          f.text = this.decode(f.text.split(/\r\n\r\n/)[1].trim(), f.struct)
+          f.text = this.decode(f.text.trim().split(/\r\n\r\n/).slice(1).join(''), f.struct)
           return f
         })
         let hmlIdx = q.findIndex(o => {
