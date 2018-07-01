@@ -1,6 +1,7 @@
 import iconv from 'iconv-lite'
 import traverse from './traverse'
 import quotedPrintable from 'quoted-printable'
+import logger from './logger';
 
 let encodings = ['ascii', 'utf8', 'utf16le', 'ucs2', 'base64', 'latin1', 'binary', 'hex']
 
@@ -52,7 +53,11 @@ export class Mail {
             return o.params && o.params.boundary
           })
           .map(o => {
-            return o.params.boundary.replace('?', '[?]')
+            let boundary = o.params.boundary
+            return {
+              raw: boundary,
+              reg: boundary.replace(/\-/g, '').replace(/(\W)/g, '\\$1')
+            }
           })
         let r = []
         f.filter(o => {
@@ -63,30 +68,40 @@ export class Mail {
             return Number(o)
           })
           pids.forEach((o, i) => {
-            let _t = i < 1 ? this.raw : t[i - 1]
-            let reg = new RegExp(`[\-]*${k[i]}[\-]*`, 'g')
-            t[i] = _t.split(reg)[o].replace(reg, '')
+            let spt = `--${k[i].raw}\r\n`
+            let reg = new RegExp(`[\\-]*${k[i].reg}[\\-]*`, 'g')
+            try {
+              let _t = i < 1 ? this.raw : t[i - 1]
+              t[i] = _t.split(spt)[o].replace(reg, '')
+            } catch (e) {
+              logger.error(e.message, reg)
+            }
           })
           r.push({
             text: t[pids.length - 1],
             struct: o
           })
         })
-        let q = r.map(f => {
-          f.text = this.decode(f.text.trim().split(/\r\n\r\n/).slice(1).join(''), f.struct)
-          return f
-        })
-        let hmlIdx = q.findIndex(o => {
-          return o.struct.subtype === 'html'
-        })
-        let imgs = q.filter(o => {
-          return o.struct.type === 'image'
-        })
-        imgs.forEach(o => {
-          let imgId = o.struct.id
-          q[hmlIdx].text = q[hmlIdx].text.replace(`cid:${imgId.substring(1, imgId.length - 1)}`, `data:image/${o.struct.subtype};base64,${o.text}`)
-        })
-        return q
+        try {
+          let q = r.map(f => {
+            f.text = this.decode(f.text.trim().split(/\r\n\r\n/).slice(1).join(''), f.struct)
+            return f
+          })
+          let hmlIdx = q.findIndex(o => {
+            return o.struct.subtype === 'html'
+          })
+          let imgs = q.filter(o => {
+            return o.struct.type === 'image'
+          })
+          imgs.forEach(o => {
+            let imgId = o.struct.id
+            q[hmlIdx].text = q[hmlIdx].text.replace(`cid:${imgId.substring(1, imgId.length - 1)}`, `data:image/${o.struct.subtype};base64,${o.text}`)
+          })
+          return q
+        } catch (e) {
+          logger.error(e.message)
+          return {}
+        }
     }
   }
 }
