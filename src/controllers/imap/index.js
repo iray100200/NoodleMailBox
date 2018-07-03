@@ -65,7 +65,7 @@ export default class ImapController extends Controller {
     }
   }
   async receiveList(params) {
-    let { scope, condition, date, rows, uuid } = params
+    let { scope, condition, date, rows, uuid, type = "INBOX" } = params
     if (!condition) return Promise.reject('Invalid parameters. The condition\'s type is invalid.')
     if (!date) return Promise.reject('Invalid parameters. The date\'s type is invalid.')
     if (!scope || Object.keys(IMAP_SCOPE).indexOf((scope = scope.toUpperCase())) < 0) return Promise.reject('Invalid parameters. Flag is incorrect.')
@@ -75,7 +75,8 @@ export default class ImapController extends Controller {
         condition,
         date: Date.parse(date),
         rows: rows || 30,
-        uuid
+        uuid,
+        type: type.toUpperCase()
       })
     } catch (e) {
       return Promise.reject(e.message)

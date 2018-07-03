@@ -147,11 +147,11 @@ export class ImapAccount {
     })
   }
   static fetchList(params) {
-    let { uuid, scope, condition, date, rows } = params
+    let { uuid, scope, condition, date, rows, type } = params
     let imap = ImapAccount.connections[uuid]
     return new Promise((resolve, reject) => {
-      logger.info('...Start fetching list')
-      imap.openBox('INBOX', true, err => {
+      logger.info('...Start fetching list', type)
+      imap.openBox(type, true, err => {
         if (err) {
           return reject(err)
         }
