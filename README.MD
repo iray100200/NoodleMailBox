@@ -4,8 +4,10 @@
 
 Installation
 ============
-npm install
+
+    npm install
 
 Start a server listening on port 3000
 ============
-npm start
+
+    npm start
