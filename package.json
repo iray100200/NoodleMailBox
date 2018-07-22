@@ -19,6 +19,7 @@
     "log4js": "^2.9.0",
     "mailparser": "^2.2.0",
     "mongodb": "^3.1.0-beta4",
+    "nodemailer": "^4.6.7",
     "npm": "^6.1.0",
     "smtp-protocol": "^2.4.7",
     "sqlite3": "^4.0.0",
