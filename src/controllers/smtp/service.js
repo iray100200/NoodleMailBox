@@ -38,6 +38,7 @@ export class SmtpService {
           logger.info(info)
           resolve(info)
         }
+        this.transporter.close()
       })
     })
   }

@@ -23,7 +23,7 @@ export default class SmtpController extends Controller {
   }
   async send(params) {
     try {
-      let service = new SmtpService({ user: 'iray100200@hotmail.com', pass: 'lming%1oo200' }, 'outlook')
+      let service = new SmtpService({ user: params.username, pass: params.password })
       return service.send({
         to: 'tb100200@outlook.com',
         subject: '测试邮件主题',
