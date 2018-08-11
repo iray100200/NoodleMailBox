@@ -23,11 +23,12 @@ export default class SmtpController extends Controller {
   }
   async send(params) {
     try {
+      let { to, subject, html, username, password } = params
       let service = new SmtpService({ user: params.username, pass: params.password })
       return service.send({
-        to: 'tb100200@outlook.com',
-        subject: '测试邮件主题',
-        html: '<div>测试邮件一</div>'
+        to: to,
+        subject: subject,
+        html: html
       })
     } catch (e) {
       return Promise.reject(e.message)
