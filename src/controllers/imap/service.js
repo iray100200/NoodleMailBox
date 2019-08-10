@@ -61,7 +61,6 @@ export class ImapAccount {
     let imap = ImapAccount.connections[uuid]
     return new Promise((resolve, reject) => {
       logger.info('...Start marking', uuid)
-      if (!imap) reject('...Connection does not exist!')
       try {
         if (imap.state !== 'connected') {
           imap.connect()
