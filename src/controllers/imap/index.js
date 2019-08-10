@@ -7,8 +7,8 @@ import logger from '../../com/logger'
 export default class ImapController extends Controller {
   register() {
     return {
-      '@all->/login': (req, res) => {
-        this.login(Object.assign(req.params, params(req)))
+      '@all->/auth': (req, res) => {
+        this.auth(Object.assign(req.params, params(req)))
           .then(f => {
             res.status(200).send({
               data: f
@@ -96,11 +96,11 @@ export default class ImapController extends Controller {
       return Promise.reject(e.message)
     }
   }
-  async login(params) {
+  async auth(params) {
     let { username, password, host, port } = params
     try {
       let access = await this.checkAuth(username, password, host, port)
-      return access.login(params)
+      return access.auth(params)
     } catch (e) {
       return Promise.reject(e.message)
     }

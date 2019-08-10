@@ -37,24 +37,23 @@ export class ImapAccount {
       return this._uuid
     })()
   }
-  login(params) {
+  auth(params) {
     let { username } = params
     let imap = this.imap
     return new Promise((resolve, reject) => {
       logger.info('...Start login', username)
+      if (imap.state !== 'connected') {
+        imap.connect()
+      }
       imap.once('ready', () => {
-        resolve({ mailId: params.username, uuid: this.uuid })
+        resolve({ mailId: username, uuid: this.uuid })
       }).once('error', function (err) {
-        logger.warn(err)
-        try {
-          reject(err)
-        } catch (e) {
-          logger.warn('...App', e.message)
-        }
+        logger.warn('[auth]', err)
+        imap.end()
       }).once('end', function () {
         logger.info('...Imap connection ended!')
+        imap.end()
       })
-      imap.connect()
     })
   }
   static markSeen(params) {
@@ -64,7 +63,9 @@ export class ImapAccount {
       logger.info('...Start marking', uuid)
       if (!imap) reject('...Connection does not exist!')
       try {
-        imap.connect()
+        if (imap.state !== 'connected') {
+          imap.connect()
+        }
         imap.once('ready', (error) => {
           if (error) {
             return reject(error)
@@ -104,7 +105,9 @@ export class ImapAccount {
     }
     return new Promise((resolve, reject) => {
       logger.info('...Start fetching details')
-      if (!imap) reject('...Connection does not exist!')
+      if (imap.state !== 'connected') {
+        reject('...Connection does not exist!')
+      }
       imap.fetch(list, { bodies: ['TEXT'], struct: true, envelope: true, size: true })
         .on('message', (msg, seqno) => {
           logger.info('...Start fetching detail on message', seqno)
@@ -151,18 +154,29 @@ export class ImapAccount {
     let imap = ImapAccount.connections[uuid]
     return new Promise((resolve, reject) => {
       logger.info('...Start fetching list', type)
-      imap.openBox(type, true, err => {
-        if (err) {
-          return reject(err)
+      if (imap.state !== 'connected') {
+        imap.connect()
+      } else {
+        setTimeout(() => {
+          imap.end()
+        }, 120000)
+      }
+      imap.once('ready', error => {
+        if (error) {
+          return reject(error)
         }
-        imap.search([scope || 'ALL', [condition || 'SINCE', date || new Date()]], (err, result) => {
+        imap.openBox(type, true, err => {
           if (err) {
             return reject(err)
           }
-          let [...map] = result;
-          result.reverse()
-          result.length > rows ? result.length = rows : null
-          resolve({ result, map })
+          imap.search([scope || 'ALL', [condition || 'SINCE', date || new Date()]], (err, result) => {
+            if (err) {
+              return reject(err)
+            }
+            let [...map] = result;
+            result.reverse()
+            resolve({ result, map })
+          })
         })
       })
     })
